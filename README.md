@@ -1,6 +1,8 @@
 # Retro Engine (RSDK) v4 Decompilation
 A Full Decompilation of RSDKv4/Sonic 1 & 2 (2013)
 
+Repository used for autobuild the project
+
 # **SUPPORT THE OFFICIAL RELEASE OF SONIC 1 & SONIC 2**
 + Without assets from the official releases this decompilation will not run.
 + Video tutorial on how to find your legally obtained data.rsdk file: https://www.youtube.com/watch?v=gzIfRW91IxE
