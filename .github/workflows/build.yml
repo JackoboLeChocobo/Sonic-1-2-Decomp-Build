@@ -19,7 +19,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: v4-linux
+          name: linux
           path: bin
   msys2-windows-x64:
     runs-on: windows-latest
