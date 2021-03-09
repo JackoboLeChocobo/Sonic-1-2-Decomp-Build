@@ -10,14 +10,15 @@ jobs:
     steps:
       - uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: MSYS
       - shell: msys2 {0}
         name: Install new dependencies
         run : |
-          pacman make
+          pacman --noconfirm -U make
       - name: Compile the project
         run : |
-          make CXX=x86_64-w64-mingw32-g++ CXXFLAGS=-static
+          set MSYSTEM=MINGW64
+          msys2 -c 'make CXX=x86_64-w64-mingw32-g++ CXXFLAGS=-static'
       - name: Move artifacts
         run: |
           mkdir artifacts
