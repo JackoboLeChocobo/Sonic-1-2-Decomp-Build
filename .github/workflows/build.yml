@@ -10,6 +10,16 @@ jobs:
     steps:
       - uses: msys2/setup-msys2@v2
         with:
+          update: true
+            install: >-
+              pkg-config
+              make
+              git
+              mingw-w64-i686-gcc
+              mingw-w64-x86_64-gcc
+              mingw-w64-x86_64-SDL2
+              mingw-w64-x86_64-libogg
+              mingw-w64-x86_64-libvorbis
           msystem: MSYS
       - shell: msys2 {0}
         name: Install new dependencies
