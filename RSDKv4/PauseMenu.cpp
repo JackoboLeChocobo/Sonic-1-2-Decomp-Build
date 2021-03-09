@@ -24,11 +24,37 @@ void PauseMenu_Create(void *objPtr)
     displayed = new ushort[SCREEN_XSIZE * SCREEN_YSIZE];
 
     snapDataFile(1);
-    LoadPalette("Menu/Pause/PauseMenu.act", 7, 0, 0, 56);
+    LoadPalette("Data/Palettes/PauseMenu.act", 7, 0, 0, 56);
     snapDataFile(0);
-
-    SetPaletteEntry(7, 8, 0xca, 0x51, 0);
-    SetPaletteEntry(7, 9, 0xca, 0x51, 0);
+	
+	switch(playerListPos)
+		{
+		case 0:
+			SetPaletteEntry(7, 1, 0x20, 0x20, 0x80);
+			SetPaletteEntry(7, 2, 0x60, 0x60, 0xc0);
+			SetPaletteEntry(7, 8, 0xe0, 0x00, 0x00);
+			SetPaletteEntry(7, 9, 0x80, 0x00, 0x00);
+			break;
+		case 1:
+			SetPaletteEntry(7, 1, 0x80, 0x00, 0x00);
+			SetPaletteEntry(7, 2, 0xe0, 0x80, 0x00);
+			SetPaletteEntry(7, 8, 0xe0, 0x00, 0x00);
+			SetPaletteEntry(7, 9, 0x80, 0x00, 0x00);
+			break;
+		case 2:
+			SetPaletteEntry(7, 1, 0xc0, 0x00, 0x20);
+			SetPaletteEntry(7, 2, 0xe0, 0x40, 0x60);
+			SetPaletteEntry(7, 8, 0x00, 0x80, 0x00);
+			SetPaletteEntry(7, 9, 0x00, 0x3c, 0x00);
+			break;
+		default :
+			SetPaletteEntry(7, 1, 0x88, 0x88, 0x88);
+			SetPaletteEntry(7, 2, 0xee, 0xee, 0xee);
+			SetPaletteEntry(7, 8, 0x80, 0x00, 0x00);
+			SetPaletteEntry(7, 9, 0xe0, 0x80, 0x00);
+			break;
+		}
+   
 
 #if RETRO_SOFTWARE_RENDER
     memcpy(fbcopy, Engine.frameBuffer, (SCREEN_XSIZE * SCREEN_YSIZE) * sizeof(ushort));
