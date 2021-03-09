@@ -5,6 +5,17 @@ on:
       - master
 
 jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libogg-dev libvorbis-dev libsdl2-dev
+      - name: Build RSDKv4
+        run: make
   msys2-windows-x64:
     runs-on: windows-latest
     steps:
@@ -35,18 +46,7 @@ jobs:
         uses: actions/upload-artifact@v1.0.0  
         with:
           name: msys2-windows-x64
-          path: artifacts   
-  v4-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install libogg-dev libvorbis-dev libsdl2-dev
-      - name: Build RSDKv4
-        run: make
+          path: artifacts
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
