@@ -5,6 +5,27 @@ on:
       - master
 
 jobs:
+  msys2-windows-x64:
+    runs-on: windows-latest
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+      - name : Install dependencies for compiling
+        run : |
+          pacman -S pkg-config make git wget unzip mingw-w64-i686-gcc mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-libogg mingw-w64-x86_64-libvorbis
+      - name: Compile the project
+        run : |
+          make CXX=x86_64-w64-mingw32-g++ CXXFLAGS=-static
+      - name: Move artifacts
+        run: |
+          mkdir artifacts
+          move ./bin/*.exe ./artifacts 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1.0.0  
+        with:
+          name: msys2-windows-x64
+          path: artifacts 
   v4-windows:
     runs-on: windows-latest
     steps:
