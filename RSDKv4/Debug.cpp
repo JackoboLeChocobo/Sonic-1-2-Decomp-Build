@@ -152,7 +152,31 @@ void processStageSelect()
                 }
 #if !RETRO_USE_ORIGINAL_CODE
                 else if (gameMenu[0].selection2 == 13) {
-                    initStartMenu(0);
+					SetupTextMenu(&gameMenu[0], 0);
+                    AddTextMenuEntry(&gameMenu[0], "MOD LIST");
+                    SetupTextMenu(&gameMenu[1], 0);
+
+                    char buffer[0x100];
+                    for (int m = 0; m < modCount; ++m) {
+                        StrCopy(buffer, modList[m].name.c_str());
+                        StrAdd(buffer, ": ");
+                        StrAdd(buffer, modList[m].active ? "  Active" : "Inactive");
+                        AddTextMenuEntry(&gameMenu[1], buffer);
+                    }
+
+                    gameMenu[1].alignment      = 1;
+                    gameMenu[1].selectionCount = 3;
+                    gameMenu[1].selection1     = 0;
+                    if (gameMenu[1].rowCount > 18)
+                        gameMenu[1].visibleRowCount = 18;
+                    else
+                        gameMenu[1].visibleRowCount = 0;
+
+                    gameMenu[0].alignment        = 2;
+                    gameMenu[0].selectionCount   = 1;
+                    gameMenu[1].timer            = 0;
+                    gameMenu[1].visibleRowOffset = 0;
+                    stageMode                  = DEVMENU_MODMENU;
                 }
                 else {
                     Engine.running = false;
@@ -344,6 +368,77 @@ void processStageSelect()
             }
             break;
         }
+        case DEVMENU_MODMENU: // Mod Menu
+        {
+            if (keyDown.down) {
+                gameMenu[1].timer += 1;
+                if (gameMenu[1].timer > 8) {
+                    gameMenu[1].timer = 0;
+                    keyPress.down     = true;
+                }
+            }
+            else {
+                if (keyDown.up) {
+                    gameMenu[1].timer -= 1;
+                    if (gameMenu[1].timer < -8) {
+                        gameMenu[1].timer = 0;
+                        keyPress.up       = true;
+                    }
+                }
+                else {
+                    gameMenu[1].timer = 0;
+                }
+            }
+            if (keyPress.down) {
+                gameMenu[1].selection1++;
+                if (gameMenu[1].selection1 - gameMenu[1].visibleRowOffset >= gameMenu[1].visibleRowCount) {
+                    gameMenu[1].visibleRowOffset += 1;
+                }
+            }
+            if (keyPress.up) {
+                gameMenu[1].selection1--;
+                if (gameMenu[1].selection1 - gameMenu[1].visibleRowOffset < 0) {
+                    gameMenu[1].visibleRowOffset -= 1;
+                }
+            }
+            if (gameMenu[1].selection1 >= gameMenu[1].rowCount) {
+                gameMenu[1].selection1       = 0;
+                gameMenu[1].visibleRowOffset = 0;
+            }
+            if (gameMenu[1].selection1 < 0) {
+                gameMenu[1].selection1       = gameMenu[1].rowCount - 1;
+                gameMenu[1].visibleRowOffset = gameMenu[1].rowCount - gameMenu[1].visibleRowCount;
+            }
+
+            char buffer[0x100];
+            if (keyPress.A || keyPress.start || keyPress.left || keyPress.right) {
+                modList[gameMenu[1].selection1].active ^= 1; 
+                StrCopy(buffer, modList[gameMenu[1].selection1].name.c_str());
+                StrAdd(buffer, ": ");
+                StrAdd(buffer, (modList[gameMenu[1].selection1].active ? "  Active" : "Inactive"));
+                EditTextMenuEntry(&gameMenu[1], buffer, gameMenu[1].selection1);
+            }
+
+            if (keyPress.B) {
+                setTextMenu(DEVMENU_MAIN);
+
+                //Reload entire engine
+                Engine.LoadGameConfig("Data/Game/GameConfig.bin");
+
+                ReleaseGlobalSfx();
+                //LoadGlobalSfx();
+
+                forceUseScripts = false;
+                for (int m = 0; m < modCount; ++m) {
+                    if (modList[m].useScripts && modList[m].active)
+                        forceUseScripts = true;
+                }
+                saveMods();
+            }
+
+            DrawTextMenu(&gameMenu[0], SCREEN_CENTERX - 4, 40);
+            DrawTextMenu(&gameMenu[1], SCREEN_CENTERX + 100, 64);
+        }
         default: break;
     }
 
@@ -378,7 +473,7 @@ void setTextMenu(int sm)
             AddTextMenuEntry(&gameMenu[0], "STAGE SELECT");
 #if !RETRO_USE_ORIGINAL_CODE
             AddTextMenuEntry(&gameMenu[0], " ");
-            AddTextMenuEntry(&gameMenu[0], "START MENU");
+            AddTextMenuEntry(&gameMenu[0], "MODS");
             AddTextMenuEntry(&gameMenu[0], " ");
             AddTextMenuEntry(&gameMenu[0], "EXIT GAME");
 #endif
