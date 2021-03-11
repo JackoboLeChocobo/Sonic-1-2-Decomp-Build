@@ -72,7 +72,7 @@ jobs:
         name: Compile the project
         run : |
           set MSYSTEM=MINGW32
-          make CXX=i686-w64-mingw32-g++ CXXFLAGS=-static
+          make CXXFLAGS=-static
       - name: Move artifacts
         run: |
           mkdir artifacts
