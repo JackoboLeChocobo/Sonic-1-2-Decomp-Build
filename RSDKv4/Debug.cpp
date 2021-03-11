@@ -1,5 +1,4 @@
 #include "RetroEngine.hpp"
-#include <unistd.h>
 
 #if !RETRO_USE_ORIGINAL_CODE
 bool endLine   = true;
@@ -524,8 +523,6 @@ void processStageSelect()
 			snapDataFile(1);
 			LoadGIFFile("Data/Game/SystemTextMod.gif", SURFACE_MAX - 1);
 			StrCopy(gfxSurface[SURFACE_MAX - 1].fileName, "Data/Game/SystemTextMod.gif");
-			snapDataFile(0);
-			snapDataFile(1);
 			LoadGIFFile(buffer, SURFACE_MAX - 2);
 			StrCopy(gfxSurface[SURFACE_MAX - 2].fileName, buffer);
 			snapDataFile(0);
@@ -539,18 +536,10 @@ void processStageSelect()
 				DrawSprite(screen_x_bg, 0, 16, 28, sprite_pos_x, 241, SURFACE_MAX - 2);
 				DrawSprite(screen_x_bg, SCREEN_YSIZE-28, 16, 28, sprite_pos_x, 270, SURFACE_MAX - 2);
 				screen_x_bg=screen_x_bg+16;
-				/*temp1=16
-				temp1+=object.value1
-				DrawSpriteScreenXY(temp1,temp0,temp2)
-				temp0+=16*/
 				}
 			
-			sprite_pos_x=sprite_pos_x+17;
-			
-			if(sprite_pos_x > 255)
-				{
-				sprite_pos_x = 0;
-				}
+			sprite_pos_x=sprite_pos_x+17;	
+			if(sprite_pos_x > 255) sprite_pos_x = 0;
 			
 			DrawSprite((SCREEN_XSIZE - 320) / 2, (SCREEN_YSIZE - 240) / 2, 320, 240, 0, 0, SURFACE_MAX - 2);
 			DrawSprite(((SCREEN_XSIZE - 320) / 2)+25, ((SCREEN_YSIZE - 240) / 2)+59, 160, 120, 321, 0, SURFACE_MAX - 2);
@@ -565,8 +554,7 @@ void processStageSelect()
 			if(fade==false)
 				{
 				DrawRectangle(0, 0, SCREEN_XSIZE, SCREEN_YSIZE, 0, 0, 0, fadevalue);
-				usleep(3);//sleeps for 3 second
-				fadevalue=fadevalue-5;
+				fadevalue=fadevalue-15;
 				if(fadevalue<=0)
 					fade=true;
 				}
@@ -574,8 +562,7 @@ void processStageSelect()
 			if(exitmods==true && fade==true)
 				{
 				DrawRectangle(0, 0, SCREEN_XSIZE, SCREEN_YSIZE, 0, 0, 0, fadevalue);
-				usleep(3);//sleeps for 3 second
-				fadevalue=fadevalue+5;
+				fadevalue=fadevalue+15;
 				if(fadevalue>400)
 					{
 					fade=false;
