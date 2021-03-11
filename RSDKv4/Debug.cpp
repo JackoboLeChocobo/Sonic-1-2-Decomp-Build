@@ -1,4 +1,5 @@
 #include "RetroEngine.hpp"
+#include <unistd.h>
 
 #if !RETRO_USE_ORIGINAL_CODE
 bool endLine   = true;
@@ -8,6 +9,11 @@ int taListStore = 0;
 int touchTimer = 0;
 
 bool display=false;
+bool fade=false;
+int fadevalue=255;
+int screen_x_bg=0;
+int sprite_pos_x=0;
+bool exitmods = false;
 
 void initDevMenu()
 {
@@ -45,10 +51,16 @@ void initDevMenu()
 
 void initModMenu()
 {
+	display=false;
+	fade=false;
+	exitmods=false;
+	fadevalue=255;
+	screen_x_bg=0;
+	sprite_pos_x=0;
+
     // DrawStageGFXHQ = 0;
     xScrollOffset = 0;
     yScrollOffset = 0;
-    StopMusic();
     StopAllSfx();
     ReleaseStageSfx();
     fadeMode        = 0;
@@ -68,33 +80,31 @@ void initModMenu()
     SetupTextMenu(&gameMenu[1], 0);
 
     char buffer[0x100];
-                    for (int m = 0; m < modCount; ++m) {
-                        StrCopy(buffer, modList[m].name.c_str());
-                        StrAdd(buffer, ": ");
-                        StrAdd(buffer, modList[m].active ? "  Active" : "Inactive");
-                        AddTextMenuEntry(&gameMenu[1], buffer);
-                    }
+    for (int m = 0; m < modCount; ++m) {
+		StrCopy(buffer, modList[m].name.c_str());
+		StrAdd(buffer, ": ");
+		StrAdd(buffer, modList[m].active ? "  Active" : "Inactive");
+		AddTextMenuEntry(&gameMenu[1], buffer);
+		}
 
-                    gameMenu[1].alignment      = 1;
-                    gameMenu[1].selectionCount = 3;
-                    gameMenu[1].selection1     = 0;
-                    if (gameMenu[1].rowCount > 18)
-                        gameMenu[1].visibleRowCount = 18;
-                    else
-                        gameMenu[1].visibleRowCount = 0;
+	gameMenu[1].alignment      = 1;
+	gameMenu[1].selectionCount = 3;
+	gameMenu[1].selection1     = 0;
+	if (gameMenu[1].rowCount > 18)
+		gameMenu[1].visibleRowCount = 18;
+	else
+		gameMenu[1].visibleRowCount = 0;
 
-                    gameMenu[0].alignment        = 2;
-                    gameMenu[0].selectionCount   = 1;
-                    gameMenu[1].timer            = 0;
-                    gameMenu[1].visibleRowOffset = 0;
-                    stageMode                  = DEVMENU_MODMENU;
-                    display = false;
-                    
-                            
-					snapDataFile(1);
-					LoadPalette("Data/Palettes/TitleMenuV2.act", 7, 0, 0, 256);
-					snapDataFile(0);
+	gameMenu[0].alignment        = 2;
+	gameMenu[0].selectionCount   = 1;
+	gameMenu[1].timer            = 0;
+	gameMenu[1].visibleRowOffset = 0;
+	stageMode                  = DEVMENU_MODMENU;
+	display = false;
 
+	snapDataFile(1);
+	LoadPalette("Data/Palettes/TitleMenuV2.act", 7, 0, 0, 256);
+	snapDataFile(0);
 //#endif
     drawStageGFXHQ = false;
     touchTimer               = 0;
@@ -443,8 +453,9 @@ void processStageSelect()
             break;
         }
         case DEVMENU_MODMENU: // Mod Menu
-        {
+        {			
             if (keyDown.down) {
+				PlaySFXByName("Menu Button", 0);
                 gameMenu[1].timer += 1;
                 if (gameMenu[1].timer > 8) {
                     gameMenu[1].timer = 0;
@@ -453,6 +464,7 @@ void processStageSelect()
             }
             else {
                 if (keyDown.up) {
+				PlaySFXByName("Menu Button", 0);
                     gameMenu[1].timer -= 1;
                     if (gameMenu[1].timer < -8) {
                         gameMenu[1].timer = 0;
@@ -480,6 +492,7 @@ void processStageSelect()
 
             char buffer[0x100];
             if (keyPress.A || keyPress.start) {
+				PlaySFXByName("Select", 0);
                 modList[gameMenu[1].selection1].active ^= 1; 
                 StrCopy(buffer, modList[gameMenu[1].selection1].name.c_str());
                 StrAdd(buffer, ": ");
@@ -489,6 +502,7 @@ void processStageSelect()
             }
 
             if (keyPress.B) {
+				PlaySFXByName("Select", 0);
                 forceUseScripts = false;
                 for (int m = 0; m < modCount; ++m) {
                     if (modList[m].useScripts && modList[m].active)
@@ -496,22 +510,17 @@ void processStageSelect()
                 }
                 saveMods();
                 
-                ClearGraphicsData();
-                ClearAnimationData();
-                InitStartingStage(STAGELIST_PRESENTATION, 10, 0);
+                fadevalue=0;
+				exitmods=true;
             }
         
-        if(display==false)
-			{
 			ClearGraphicsData();
 			ClearAnimationData();
-			display=true;
 			SetActivePalette(7, 0, 256);
 			StrCopy(buffer,"");
 			StrAdd(buffer, "mods/");
 			StrAdd(buffer, modList[gameMenu[1].selection1].name.c_str());
 			StrAdd(buffer, "/mod.gif");
-			printf("%s\n",buffer);
 			snapDataFile(1);
 			LoadGIFFile("Data/Game/SystemTextMod.gif", SURFACE_MAX - 1);
 			StrCopy(gfxSurface[SURFACE_MAX - 1].fileName, "Data/Game/SystemTextMod.gif");
@@ -521,18 +530,60 @@ void processStageSelect()
 			StrCopy(gfxSurface[SURFACE_MAX - 2].fileName, buffer);
 			snapDataFile(0);
 			
-			DrawRectangle(0, 0, SCREEN_XSIZE, SCREEN_YSIZE, 0, 0, 0, 255);
+			DrawRectangle(0, 0, SCREEN_XSIZE, SCREEN_YSIZE, 255, 255, 255, 255);
+			
+			screen_x_bg=0;
+				
+			while(screen_x_bg<SCREEN_XSIZE)
+				{
+				DrawSprite(screen_x_bg, 0, 16, 28, sprite_pos_x, 241, SURFACE_MAX - 2);
+				DrawSprite(screen_x_bg, SCREEN_YSIZE-28, 16, 28, sprite_pos_x, 270, SURFACE_MAX - 2);
+				screen_x_bg=screen_x_bg+16;
+				/*temp1=16
+				temp1+=object.value1
+				DrawSpriteScreenXY(temp1,temp0,temp2)
+				temp0+=16*/
+				}
+			
+			sprite_pos_x=sprite_pos_x+17;
+			
+			if(sprite_pos_x > 255)
+				{
+				sprite_pos_x = 0;
+				}
+			
 			DrawSprite((SCREEN_XSIZE - 320) / 2, (SCREEN_YSIZE - 240) / 2, 320, 240, 0, 0, SURFACE_MAX - 2);
-			DrawSprite(((SCREEN_XSIZE - 320) / 2)+26, ((SCREEN_YSIZE - 240) / 2)+21, 160, 120, 321, 0, SURFACE_MAX - 2);
-			DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+30, 104, 15, 321, 121, SURFACE_MAX - 2);
-			DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+58, 104, 24, 321, 137, SURFACE_MAX - 2);
-			DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+95, 104, 7, 321, 162, SURFACE_MAX - 2);
+			DrawSprite(((SCREEN_XSIZE - 320) / 2)+25, ((SCREEN_YSIZE - 240) / 2)+59, 160, 120, 321, 0, SURFACE_MAX - 2);
+			DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+68, 104, 15, 321, 121, SURFACE_MAX - 2);
+			DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+96, 104, 24, 321, 137, SURFACE_MAX - 2);
+			DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+133, 104, 7, 321, 162, SURFACE_MAX - 2);
 			if(modList[gameMenu[1].selection1].active)
-				DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+115, 104, 11, 321, 170, SURFACE_MAX - 2);
+				DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+153, 104, 11, 321, 170, SURFACE_MAX - 2);
 			else
-				DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+115, 104, 11, 321, 182, SURFACE_MAX - 2);
-			}
+				DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+153, 104, 11, 321, 182, SURFACE_MAX - 2);
 
+			if(fade==false)
+				{
+				DrawRectangle(0, 0, SCREEN_XSIZE, SCREEN_YSIZE, 0, 0, 0, fadevalue);
+				usleep(3);//sleeps for 3 second
+				fadevalue=fadevalue-5;
+				if(fadevalue<=0)
+					fade=true;
+				}
+			
+			if(exitmods==true && fade==true)
+				{
+				DrawRectangle(0, 0, SCREEN_XSIZE, SCREEN_YSIZE, 0, 0, 0, fadevalue);
+				usleep(3);//sleeps for 3 second
+				fadevalue=fadevalue+5;
+				if(fadevalue>400)
+					{
+					fade=false;
+					ClearGraphicsData();
+					ClearAnimationData();
+					InitStartingStage(STAGELIST_PRESENTATION, 10, 0);
+					}
+				}	
         }
         default: break;
     }

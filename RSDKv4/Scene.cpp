@@ -102,7 +102,8 @@ void InitStartingStage(int list, int stage, int player)
 {
     xScrollOffset = 0;
     yScrollOffset = 0;
-    StopMusic();
+    if(stageMode!=DEVMENU_MODMENU)
+		StopMusic();
     StopAllSfx();
     ReleaseStageSfx();
     fadeMode      = 0;
