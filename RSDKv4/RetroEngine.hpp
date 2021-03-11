@@ -175,6 +175,7 @@ enum RetroStates {
     ENGINE_ENDGAME     = 7,
     ENGINE_RESETGAME   = 8,
     ENGINE_EXITGAME    = 9,
+    ENGINE_LOADMODS    = 10,
 
 #if !RETRO_USE_ORIGINAL_CODE
     // Custom GameModes (required to make some features work)

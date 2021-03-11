@@ -104,6 +104,7 @@ enum StartMenuMenus {
 };
 
 void initDevMenu();
+void initModMenu();
 void initErrorMessage();
 void processStageSelect();
 

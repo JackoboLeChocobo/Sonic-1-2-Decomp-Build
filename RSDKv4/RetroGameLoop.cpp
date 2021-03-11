@@ -90,6 +90,12 @@ void RetroGameLoop_Main(void *objPtr)
 			ClearScreen(1);
 			Engine.running = false;
             break;
+		case ENGINE_LOADMODS: // Exit the game
+			ClearScreen(1);
+			Engine.LoadGameConfig("Data/Game/GameConfig.bin");
+            initModMenu();
+            ResetCurrentStageFolder();
+            break;
 #if !RETRO_USE_ORIGINAL_CODE
         case ENGINE_STARTMENU: 
             //Do nothing (this is handled by StartMenu obj)

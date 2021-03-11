@@ -7,6 +7,8 @@ int taListStore = 0;
 #endif
 int touchTimer = 0;
 
+bool display=false;
+
 void initDevMenu()
 {
     // DrawStageGFXHQ = 0;
@@ -40,6 +42,73 @@ void initDevMenu()
     UpdateHardwareTextures();
 #endif
 }
+
+void initModMenu()
+{
+    // DrawStageGFXHQ = 0;
+    xScrollOffset = 0;
+    yScrollOffset = 0;
+    StopMusic();
+    StopAllSfx();
+    ReleaseStageSfx();
+    fadeMode        = 0;
+    playerListPos   = 0;
+    Engine.gameMode = ENGINE_DEVMENU;
+    ClearGraphicsData();
+    ClearAnimationData();
+    SetActivePalette(0, 0, 256);
+    textMenuSurfaceNo = SURFACE_MAX - 1;
+    LoadGIFFile("Data/Game/SystemText.gif", SURFACE_MAX - 1);
+    SetPaletteEntry(-1, 0xF0, 0x00, 0x00, 0x00);
+    SetPaletteEntry(-1, 0xFF, 0xFF, 0xFF, 0xFF);
+//#if RETRO_USE_ORIGINAL_CODE
+
+	SetupTextMenu(&gameMenu[0], 0);
+    AddTextMenuEntry(&gameMenu[0], "MOD LIST");
+    SetupTextMenu(&gameMenu[1], 0);
+
+    char buffer[0x100];
+                    for (int m = 0; m < modCount; ++m) {
+                        StrCopy(buffer, modList[m].name.c_str());
+                        StrAdd(buffer, ": ");
+                        StrAdd(buffer, modList[m].active ? "  Active" : "Inactive");
+                        AddTextMenuEntry(&gameMenu[1], buffer);
+                    }
+
+                    gameMenu[1].alignment      = 1;
+                    gameMenu[1].selectionCount = 3;
+                    gameMenu[1].selection1     = 0;
+                    if (gameMenu[1].rowCount > 18)
+                        gameMenu[1].visibleRowCount = 18;
+                    else
+                        gameMenu[1].visibleRowCount = 0;
+
+                    gameMenu[0].alignment        = 2;
+                    gameMenu[0].selectionCount   = 1;
+                    gameMenu[1].timer            = 0;
+                    gameMenu[1].visibleRowOffset = 0;
+                    stageMode                  = DEVMENU_MODMENU;
+                    display = false;
+                    
+                            
+					snapDataFile(1);
+					LoadPalette("Data/Palettes/TitleMenuV2.act", 7, 0, 0, 256);
+					snapDataFile(0);
+
+//#endif
+    drawStageGFXHQ = false;
+    touchTimer               = 0;
+
+#if !RETRO_USE_ORIGINAL_CODE
+    RemoveNativeObjectType(StartMenu_Create, StartMenu_Main);
+    RemoveNativeObjectType(PauseMenu_Create, PauseMenu_Main);
+#endif
+#if RETRO_HARDWARE_RENDER
+    render3DEnabled    = false;
+    UpdateHardwareTextures();
+#endif
+}
+
 void initErrorMessage()
 {
     xScrollOffset = 0;
@@ -72,7 +141,8 @@ void initErrorMessage()
 }
 void processStageSelect()
 {
-    ClearScreen(0xF0);
+	if(stageMode!=DEVMENU_MODMENU)
+		ClearScreen(0xF0);
 
     CheckKeyDown(&keyDown);
     CheckKeyPress(&keyPress);
@@ -177,6 +247,13 @@ void processStageSelect()
                     gameMenu[1].timer            = 0;
                     gameMenu[1].visibleRowOffset = 0;
                     stageMode                  = DEVMENU_MODMENU;
+                    display = false;
+                    
+                            
+					snapDataFile(1);
+					LoadPalette("Data/Palettes/TitleMenuV2.act", 7, 0, 0, 256);
+					snapDataFile(0);
+                    
                 }
                 else {
                     Engine.running = false;
@@ -186,10 +263,7 @@ void processStageSelect()
             else if (keyPress.B) {
                 ClearGraphicsData();
                 ClearAnimationData();
-                activeStageList   = 0;
-                stageMode         = STAGEMODE_LOAD;
-                Engine.gameMode   = ENGINE_MAINGAME;
-                stageListPosition = 0;
+                InitStartingStage(STAGELIST_PRESENTATION, 6, 0);
             }
             break;
         }
@@ -391,53 +465,74 @@ void processStageSelect()
             }
             if (keyPress.down) {
                 gameMenu[1].selection1++;
-                if (gameMenu[1].selection1 - gameMenu[1].visibleRowOffset >= gameMenu[1].visibleRowCount) {
-                    gameMenu[1].visibleRowOffset += 1;
-                }
+                display=false;
             }
             if (keyPress.up) {
                 gameMenu[1].selection1--;
-                if (gameMenu[1].selection1 - gameMenu[1].visibleRowOffset < 0) {
-                    gameMenu[1].visibleRowOffset -= 1;
-                }
+				display=false;
             }
             if (gameMenu[1].selection1 >= gameMenu[1].rowCount) {
                 gameMenu[1].selection1       = 0;
-                gameMenu[1].visibleRowOffset = 0;
             }
             if (gameMenu[1].selection1 < 0) {
                 gameMenu[1].selection1       = gameMenu[1].rowCount - 1;
-                gameMenu[1].visibleRowOffset = gameMenu[1].rowCount - gameMenu[1].visibleRowCount;
             }
 
             char buffer[0x100];
-            if (keyPress.A || keyPress.start || keyPress.left || keyPress.right) {
+            if (keyPress.A || keyPress.start) {
                 modList[gameMenu[1].selection1].active ^= 1; 
                 StrCopy(buffer, modList[gameMenu[1].selection1].name.c_str());
                 StrAdd(buffer, ": ");
                 StrAdd(buffer, (modList[gameMenu[1].selection1].active ? "  Active" : "Inactive"));
                 EditTextMenuEntry(&gameMenu[1], buffer, gameMenu[1].selection1);
+                display=false;
             }
 
             if (keyPress.B) {
-                setTextMenu(DEVMENU_MAIN);
-
-                //Reload entire engine
-                Engine.LoadGameConfig("Data/Game/GameConfig.bin");
-
-                ReleaseGlobalSfx();
-                //LoadGlobalSfx();
-
                 forceUseScripts = false;
                 for (int m = 0; m < modCount; ++m) {
                     if (modList[m].useScripts && modList[m].active)
                         forceUseScripts = true;
                 }
                 saveMods();
+                
+                ClearGraphicsData();
+                ClearAnimationData();
+                InitStartingStage(STAGELIST_PRESENTATION, 10, 0);
             }
+        
+        if(display==false)
+			{
+			ClearGraphicsData();
+			ClearAnimationData();
+			display=true;
+			SetActivePalette(7, 0, 256);
+			StrCopy(buffer,"");
+			StrAdd(buffer, "mods/");
+			StrAdd(buffer, modList[gameMenu[1].selection1].name.c_str());
+			StrAdd(buffer, "/mod.gif");
+			printf("%s\n",buffer);
+			snapDataFile(1);
+			LoadGIFFile("Data/Game/SystemTextMod.gif", SURFACE_MAX - 1);
+			StrCopy(gfxSurface[SURFACE_MAX - 1].fileName, "Data/Game/SystemTextMod.gif");
+			snapDataFile(0);
+			snapDataFile(1);
+			LoadGIFFile(buffer, SURFACE_MAX - 2);
+			StrCopy(gfxSurface[SURFACE_MAX - 2].fileName, buffer);
+			snapDataFile(0);
+			
+			DrawRectangle(0, 0, SCREEN_XSIZE, SCREEN_YSIZE, 0, 0, 0, 255);
+			DrawSprite((SCREEN_XSIZE - 320) / 2, (SCREEN_YSIZE - 240) / 2, 320, 240, 0, 0, SURFACE_MAX - 2);
+			DrawSprite(((SCREEN_XSIZE - 320) / 2)+26, ((SCREEN_YSIZE - 240) / 2)+21, 160, 120, 321, 0, SURFACE_MAX - 2);
+			DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+30, 104, 15, 321, 121, SURFACE_MAX - 2);
+			DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+58, 104, 24, 321, 137, SURFACE_MAX - 2);
+			DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+95, 104, 7, 321, 162, SURFACE_MAX - 2);
+			if(modList[gameMenu[1].selection1].active)
+				DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+115, 104, 11, 321, 170, SURFACE_MAX - 2);
+			else
+				DrawSprite(((SCREEN_XSIZE - 320) / 2)+190, ((SCREEN_YSIZE - 240) / 2)+115, 104, 11, 321, 182, SURFACE_MAX - 2);
+			}
 
-            DrawTextMenu(&gameMenu[0], SCREEN_CENTERX - 4, 40);
-            DrawTextMenu(&gameMenu[1], SCREEN_CENTERX + 100, 64);
         }
         default: break;
     }
@@ -780,7 +875,7 @@ void initStartMenu(int mode)
     if(mode==0)			//Title Screen of Sonic 1/2 Menu mod
 	InitStartingStage(STAGELIST_PRESENTATION, 6, 0);
     else			//Main Menu Screen of Sonic 1/2 Menu mod
-	InitStartingStage(STAGELIST_PRESENTATION, 7, 0);
+	InitStartingStage(STAGELIST_PRESENTATION, 10, 0);
 	
 #if RETRO_HARDWARE_RENDER
     render3DEnabled = false;
