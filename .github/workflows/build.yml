@@ -71,8 +71,8 @@ jobs:
       - shell: msys2 {0}
         name: Compile the project
         run : |
-          set MSYSTEM=MINGW32
-          make CXX=i686-w64-mingw32-g++-win32 CXXFLAGS=-static
+          set MSYSTEM=MINGW64
+          make CXX=i686-w64-mingw32-g++ CXXFLAGS=-static
       - name: Move artifacts
         run: |
           mkdir artifacts
