@@ -52,3 +52,33 @@ jobs:
         with:
           name: msys2-windows-x64
           path: artifacts
+  msys2-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >-
+            pkg-config
+            make
+            git
+            mingw-w64-i686-gcc
+            mingw-w64-i686-SDL2
+            mingw-w64-i686-libogg
+            mingw-w64-i686-libvorbis
+      - shell: msys2 {0}
+        name: Compile the project
+        run : |
+          set MSYSTEM=MINGW64
+          make CXX=i686-w64-mingw32-g++ CXXFLAGS=-static
+      - name: Move artifacts
+        run: |
+          mkdir artifacts
+          move ./bin/*.exe ./artifacts 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1.0.0  
+        with:
+          name: msys2-windows
+          path: artifacts
