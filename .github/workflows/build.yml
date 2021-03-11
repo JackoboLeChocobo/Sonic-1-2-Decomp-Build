@@ -64,15 +64,20 @@ jobs:
             pkg-config
             make
             git
-            mingw-w64-i686-toolchain
+            mingw-w64-i686-gcc
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-SDL2
+            mingw-w64-x86_64-libogg
+            mingw-w64-x86_64-libvorbis
+            mingw-w64-i686-gcc
             mingw-w64-i686-SDL2
             mingw-w64-i686-libogg
             mingw-w64-i686-libvorbis
       - shell: msys2 {0}
         name: Compile the project
         run : |
-          set MSYSTEM=MINGW32
-          make CXXFLAGS=-static
+          set MSYSTEM=MINGW64
+          make CXX=x86_64-w64-mingw32-g++ CXXFLAGS=-static -f Makefile.32
       - name: Move artifacts
         run: |
           mkdir artifacts
